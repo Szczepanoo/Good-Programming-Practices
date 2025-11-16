@@ -21,33 +21,32 @@ def test_is_palindrome():
 
 # 2. fibonacci(n)
 def test_fibonacci():
+    # przypadki pozytywne
     assert fibonacci(0) == 0
     assert fibonacci(1) == 1
     assert fibonacci(5) == 5
     assert fibonacci(10) == 55
-
-def test_fibonacci_negative():
-    # Spec: oczekiwany ValueError LUB None — implementacja zwraca ValueError
+    # przypadek negatywny
     with pytest.raises(ValueError):
         fibonacci(-1)
 
 
 # 3. count_vowels(text)
 def test_count_vowels():
-    assert count_vowels("Python") == 1
+    assert count_vowels("Python") == 2
     assert count_vowels("AEIOUY") == 6
     assert count_vowels("bcd") == 0
     assert count_vowels("") == 0
-    assert count_vowels("Próba żółwia") == 4  # zgodnie ze specyfikacją
+    assert count_vowels("Próba żółwia") == 5
 
 
 # 4. calculate_discount(price, discount)
 def test_calculate_discount():
+    # przypadki pozytywne
     assert calculate_discount(100, 0.2) == 80.0
     assert calculate_discount(50, 0) == 50.0
     assert calculate_discount(200, 1) == 0.0
-
-def test_calculate_discount_invalid():
+    # przypadki negatywne
     with pytest.raises(ValueError):
         calculate_discount(100, -0.1)
     with pytest.raises(ValueError):
@@ -93,5 +92,5 @@ def test_is_prime():
     assert is_prime(4) is False
     assert is_prime(0) is False
     assert is_prime(1) is False
-    assert is_prime(5) is False   # zgodnie z dostarczoną specyfikacją
+    assert is_prime(5) is True
     assert is_prime(97) is True

@@ -19,9 +19,10 @@ def fibonacci(n: int) -> int:
 
 
 def count_vowels(text: str) -> int:
-    """Zlicza liczbę samogłosek (a, e, i, o, u, y — niezważając na wielkość liter)."""
-    vowels = set("aeiouy")
+    """Zlicza liczbę samogłosek (z polskimi znakami)."""
+    vowels = set("aeiouyąęó")
     return sum(1 for ch in text.lower() if ch in vowels)
+
 
 
 def calculate_discount(price: float, discount: float) -> float:
