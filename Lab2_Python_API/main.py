@@ -4,12 +4,32 @@ from typing import List
 
 app = FastAPI()
 
-# Klasa modelu danych
+# Modele danych
 class Movie:
     def __init__(self, movieId: int, title: str, genres: str):
         self.movieId = movieId
         self.title = title
-        self.genres = genres.split("|")  # zamieniamy "Adventure|Animation" na listę
+        self.genres = genres.split("|")
+
+class Link:
+    def __init__(self, movieId: int, imdbId: str, tmdbId: str):
+        self.movieId = movieId
+        self.imdbId = imdbId
+        self.tmdbId = tmdbId
+
+class Rating:
+    def __init__(self, userId: int, movieId: int, rating: float, timestamp: int):
+        self.userId = userId
+        self.movieId = movieId
+        self.rating = rating
+        self.timestamp = timestamp
+
+class Tag:
+    def __init__(self, userId: int, movieId: int, tag: str, timestamp: int):
+        self.userId = userId
+        self.movieId = movieId
+        self.tag = tag
+        self.timestamp = timestamp
 
 # Endpoint root
 @app.get("/")
