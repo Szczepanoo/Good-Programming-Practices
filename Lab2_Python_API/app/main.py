@@ -1,9 +1,12 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
-from .database import SessionLocal
+from .database import SessionLocal, init_db
 from .models import Movie, Link, Rating, Tag
 
 app = FastAPI()
+
+init_db()
+
 
 def get_db():
     db = SessionLocal()
@@ -12,11 +15,6 @@ def get_db():
     finally:
         db.close()
 
-from sqlalchemy import inspect
-from .database import engine
-
-insp = inspect(engine)
-print(">>> TABLES IN DB:", insp.get_table_names())
 
 @app.get("/")
 def root():
