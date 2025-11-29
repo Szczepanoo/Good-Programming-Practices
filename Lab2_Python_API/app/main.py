@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from datetime import datetime, timedelta
@@ -68,6 +69,31 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     return {"id": new_user.id, "username": new_user.username}
 
 
+bearer_scheme = HTTPBearer()
+
+
+def get_current_user(
+        credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+        db: Session = Depends(get_db)
+):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    user = db.query(User).filter(User.username == username).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+
+    return user
+
+
 @app.get("/")
 def root():
     return {"hello": "world"}
@@ -77,22 +103,22 @@ def root():
 # GET ALL
 
 @app.get("/movies")
-def get_movies(db: Session = Depends(get_db)):
+def get_movies(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(Movie).all()
 
 
 @app.get("/links")
-def get_links(db: Session = Depends(get_db)):
+def get_links(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(Link).all()
 
 
 @app.get("/ratings")
-def get_ratings(db: Session = Depends(get_db)):
+def get_ratings(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(Rating).all()
 
 
 @app.get("/tags")
-def get_tags(db: Session = Depends(get_db)):
+def get_tags(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(Tag).all()
 
 
@@ -100,7 +126,7 @@ def get_tags(db: Session = Depends(get_db)):
 # CRUD: MOVIES
 
 @app.post("/movies")
-def create_movie(movie: dict, db: Session = Depends(get_db)):
+def create_movie(movie: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     new_movie = Movie(**movie)
     db.add(new_movie)
     db.commit()
@@ -109,7 +135,7 @@ def create_movie(movie: dict, db: Session = Depends(get_db)):
 
 
 @app.get("/movies/{movie_id}")
-def get_movie(movie_id: int, db: Session = Depends(get_db)):
+def get_movie(movie_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     movie = db.get(Movie, movie_id)
     if not movie:
         raise HTTPException(404, "Movie not found")
@@ -117,7 +143,7 @@ def get_movie(movie_id: int, db: Session = Depends(get_db)):
 
 
 @app.put("/movies/{movie_id}")
-def update_movie(movie_id: int, data: dict, db: Session = Depends(get_db)):
+def update_movie(movie_id: int, data: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     movie = db.get(Movie, movie_id)
     if not movie:
         raise HTTPException(404, "Movie not found")
@@ -131,7 +157,7 @@ def update_movie(movie_id: int, data: dict, db: Session = Depends(get_db)):
 
 
 @app.delete("/movies/{movie_id}")
-def delete_movie(movie_id: int, db: Session = Depends(get_db)):
+def delete_movie(movie_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     movie = db.get(Movie, movie_id)
     if not movie:
         raise HTTPException(404, "Movie not found")
@@ -145,7 +171,7 @@ def delete_movie(movie_id: int, db: Session = Depends(get_db)):
 # CRUD: LINKS
 
 @app.post("/links")
-def create_link(link: dict, db: Session = Depends(get_db)):
+def create_link(link: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     new_link = Link(**link)
     db.add(new_link)
     db.commit()
@@ -154,7 +180,7 @@ def create_link(link: dict, db: Session = Depends(get_db)):
 
 
 @app.get("/links/{link_id}")
-def get_link(link_id: int, db: Session = Depends(get_db)):
+def get_link(link_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     link = db.get(Link, link_id)
     if not link:
         raise HTTPException(404, "Link not found")
@@ -162,7 +188,7 @@ def get_link(link_id: int, db: Session = Depends(get_db)):
 
 
 @app.put("/links/{link_id}")
-def update_link(link_id: int, data: dict, db: Session = Depends(get_db)):
+def update_link(link_id: int, data: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     link = db.get(Link, link_id)
     if not link:
         raise HTTPException(404, "Link not found")
@@ -176,7 +202,7 @@ def update_link(link_id: int, data: dict, db: Session = Depends(get_db)):
 
 
 @app.delete("/links/{link_id}")
-def delete_link(link_id: int, db: Session = Depends(get_db)):
+def delete_link(link_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     link = db.get(Link, link_id)
     if not link:
         raise HTTPException(404, "Link not found")
@@ -190,7 +216,7 @@ def delete_link(link_id: int, db: Session = Depends(get_db)):
 # CRUD: RATINGS
 
 @app.post("/ratings")
-def create_rating(rating: dict, db: Session = Depends(get_db)):
+def create_rating(rating: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     new_rating = Rating(**rating)
     db.add(new_rating)
     db.commit()
@@ -199,7 +225,7 @@ def create_rating(rating: dict, db: Session = Depends(get_db)):
 
 
 @app.get("/ratings/{rating_id}")
-def get_rating(rating_id: int, db: Session = Depends(get_db)):
+def get_rating(rating_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     rating = db.get(Rating, rating_id)
     if not rating:
         raise HTTPException(404, "Rating not found")
@@ -207,7 +233,7 @@ def get_rating(rating_id: int, db: Session = Depends(get_db)):
 
 
 @app.put("/ratings/{rating_id}")
-def update_rating(rating_id: int, data: dict, db: Session = Depends(get_db)):
+def update_rating(rating_id: int, data: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     rating = db.get(Rating, rating_id)
     if not rating:
         raise HTTPException(404, "Rating not found")
@@ -221,7 +247,7 @@ def update_rating(rating_id: int, data: dict, db: Session = Depends(get_db)):
 
 
 @app.delete("/ratings/{rating_id}")
-def delete_rating(rating_id: int, db: Session = Depends(get_db)):
+def delete_rating(rating_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     rating = db.get(Rating, rating_id)
     if not rating:
         raise HTTPException(404, "Rating not found")
@@ -235,7 +261,7 @@ def delete_rating(rating_id: int, db: Session = Depends(get_db)):
 # CRUD: TAGS
 
 @app.post("/tags")
-def create_tag(tag: dict, db: Session = Depends(get_db)):
+def create_tag(tag: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     new_tag = Tag(**tag)
     db.add(new_tag)
     db.commit()
@@ -244,7 +270,7 @@ def create_tag(tag: dict, db: Session = Depends(get_db)):
 
 
 @app.get("/tags/{tag_id}")
-def get_tag(tag_id: int, db: Session = Depends(get_db)):
+def get_tag(tag_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     tag = db.get(Tag, tag_id)
     if not tag:
         raise HTTPException(404, "Tag not found")
@@ -252,7 +278,7 @@ def get_tag(tag_id: int, db: Session = Depends(get_db)):
 
 
 @app.put("/tags/{tag_id}")
-def update_tag(tag_id: int, data: dict, db: Session = Depends(get_db)):
+def update_tag(tag_id: int, data: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     tag = db.get(Tag, tag_id)
     if not tag:
         raise HTTPException(404, "Tag not found")
@@ -266,7 +292,7 @@ def update_tag(tag_id: int, data: dict, db: Session = Depends(get_db)):
 
 
 @app.delete("/tags/{tag_id}")
-def delete_tag(tag_id: int, db: Session = Depends(get_db)):
+def delete_tag(tag_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     tag = db.get(Tag, tag_id)
     if not tag:
         raise HTTPException(404, "Tag not found")
