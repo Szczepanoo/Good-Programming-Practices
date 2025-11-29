@@ -1,12 +1,15 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from datetime import datetime, timedelta
 from .database import SessionLocal, init_db
-from .models import Movie, Link, Rating, Tag
+from .models import Movie, Link, Rating, Tag, User
+import jwt
+import bcrypt
+
 
 app = FastAPI()
-
 init_db()
-
 
 def get_db():
     db = SessionLocal()
@@ -14,6 +17,33 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+SECRET_KEY = "super_secret_key"  # w praktyce używamy zmiennych środowiskowych
+ALGORITHM = "HS256"
+
+
+class LoginData(BaseModel):
+    username: str
+    password: str
+
+
+@app.post("/login")
+def login(data: LoginData, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == data.username).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    if not bcrypt.checkpw(data.password.encode('utf-8'), user.hashed_password.encode('utf-8')):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    payload = {
+        "sub": user.username,
+        "iat": datetime.utcnow(),
+        "exp": datetime.utcnow() + timedelta(hours=1)
+    }
+    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    return {"access_token": token, "token_type": "bearer"}
 
 
 @app.get("/")
