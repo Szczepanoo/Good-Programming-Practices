@@ -6,10 +6,11 @@ from .database import SessionLocal, init_db
 from .models import Movie, Link, Rating, Tag, User
 import jwt
 import bcrypt
-
+from sqlalchemy import cast, Boolean
 
 app = FastAPI()
 init_db()
+
 
 def get_db():
     db = SessionLocal()
@@ -30,7 +31,7 @@ class LoginData(BaseModel):
 
 @app.post("/login")
 def login(data: LoginData, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == data.username).first()
+    user = db.query(User).filter(cast(User.username == data.username, Boolean)).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
@@ -44,6 +45,27 @@ def login(data: LoginData, db: Session = Depends(get_db)):
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     return {"access_token": token, "token_type": "bearer"}
+
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
+
+@app.post("/users")
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    existing_user = db.query(User).filter(cast(User.username == user.username, Boolean)).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username already exists")
+
+    hashed_pw = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+    new_user = User(username=user.username, hashed_password=hashed_pw)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return {"id": new_user.id, "username": new_user.username}
 
 
 @app.get("/")
