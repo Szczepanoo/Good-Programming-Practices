@@ -99,12 +99,12 @@ def create_user(user: UserCreate, db: Session = Depends(get_db), current_user: U
 
     hashed_pw = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
-    new_user = User(username=user.username, hashed_password=hashed_pw)
+    new_user = User(username=user.username, hashed_password=hashed_pw, roles="ROLE_USER")
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    return {"id": new_user.id, "username": new_user.username}
+    return {"id": new_user.id, "username": new_user.username, "roles": new_user.roles.split(",")}
 
 
 @app.get("/user_details")

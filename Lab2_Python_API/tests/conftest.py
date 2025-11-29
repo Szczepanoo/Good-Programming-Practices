@@ -9,7 +9,7 @@ import bcrypt
 import jwt
 from datetime import datetime, timedelta, UTC
 
-TEST_SQLALCHEMY_DATABASE_URL = "sqlite:///./tests/test.db"
+TEST_SQLALCHEMY_DATABASE_URL = "sqlite:///./tests/test.db"  # Baza testowa (inna niz prod)
 
 engine = create_engine(TEST_SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -57,7 +57,7 @@ def admin_token(db_session):
     password = "test123"
     hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
-    user = User(username=username, hashed_password=hashed, roles="ROLE_ADMIN")
+    user = User(username=username, hashed_password=hashed, roles="ROLE_USER,ROLE_ADMIN")
     db_session.add(user)
     db_session.commit()
 
@@ -72,3 +72,35 @@ def admin_token(db_session):
     db_session.close()
 
     return token
+
+
+@pytest.fixture
+def user_token(db_session):
+    username = "testuser"
+    db_session.query(User).filter(User.username == username).delete()
+    password = "user123"
+    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    user = User(username=username, hashed_password=hashed, roles="ROLE_USER")
+    db_session.add(user)
+    db_session.commit()
+    payload = {
+        "sub": user.username,
+        "roles": user.roles,
+        "iat": datetime.now(UTC),
+        "exp": datetime.now(UTC) + timedelta(hours=1)
+    }
+    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    return token
+
+
+@pytest.fixture
+def admin_user(db_session):
+    user = User(
+        username="admin",
+        hashed_password=bcrypt.hashpw("admin123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8'),
+        roles="admin"
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
