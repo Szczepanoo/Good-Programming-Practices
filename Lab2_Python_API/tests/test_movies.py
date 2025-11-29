@@ -21,10 +21,8 @@ def test_get_movies_count(client, multiple_movies):
     assert response.status_code == 200
 
     data = response.json()
-    # weryfikujemy, że GET zwraca dokładnie tyle elementów, ile fixtura
     assert len(data) == len(multiple_movies)
 
-    # dodatkowo możemy sprawdzić, że ID/tytuły się zgadzają
     returned_ids = sorted([m["movieId"] for m in data])
     fixture_ids = sorted([m["movieId"] for m in multiple_movies])
     assert returned_ids == fixture_ids

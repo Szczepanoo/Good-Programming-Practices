@@ -103,7 +103,7 @@ def create_link(link: dict, db: Session = Depends(get_db)):
 
 @app.get("/links/{link_id}")
 def get_link(link_id: int, db: Session = Depends(get_db)):
-    link = db.query(Link).get(link_id)
+    link = db.get(Link, link_id)
     if not link:
         raise HTTPException(404, "Link not found")
     return link
@@ -111,7 +111,7 @@ def get_link(link_id: int, db: Session = Depends(get_db)):
 
 @app.put("/links/{link_id}")
 def update_link(link_id: int, data: dict, db: Session = Depends(get_db)):
-    link = db.query(Link).get(link_id)
+    link = db.get(Link, link_id)
     if not link:
         raise HTTPException(404, "Link not found")
 
@@ -125,7 +125,7 @@ def update_link(link_id: int, data: dict, db: Session = Depends(get_db)):
 
 @app.delete("/links/{link_id}")
 def delete_link(link_id: int, db: Session = Depends(get_db)):
-    link = db.query(Link).get(link_id)
+    link = db.get(Link, link_id)
     if not link:
         raise HTTPException(404, "Link not found")
 
@@ -148,7 +148,7 @@ def create_rating(rating: dict, db: Session = Depends(get_db)):
 
 @app.get("/ratings/{rating_id}")
 def get_rating(rating_id: int, db: Session = Depends(get_db)):
-    rating = db.query(Rating).get(rating_id)
+    rating = db.get(Rating, rating_id)
     if not rating:
         raise HTTPException(404, "Rating not found")
     return rating
@@ -156,7 +156,7 @@ def get_rating(rating_id: int, db: Session = Depends(get_db)):
 
 @app.put("/ratings/{rating_id}")
 def update_rating(rating_id: int, data: dict, db: Session = Depends(get_db)):
-    rating = db.query(Rating).get(rating_id)
+    rating = db.get(Rating, rating_id)
     if not rating:
         raise HTTPException(404, "Rating not found")
 
@@ -170,7 +170,7 @@ def update_rating(rating_id: int, data: dict, db: Session = Depends(get_db)):
 
 @app.delete("/ratings/{rating_id}")
 def delete_rating(rating_id: int, db: Session = Depends(get_db)):
-    rating = db.query(Rating).get(rating_id)
+    rating = db.get(Rating, rating_id)
     if not rating:
         raise HTTPException(404, "Rating not found")
 
@@ -193,7 +193,7 @@ def create_tag(tag: dict, db: Session = Depends(get_db)):
 
 @app.get("/tags/{tag_id}")
 def get_tag(tag_id: int, db: Session = Depends(get_db)):
-    tag = db.query(Tag).get(tag_id)
+    tag = db.get(Tag, tag_id)
     if not tag:
         raise HTTPException(404, "Tag not found")
     return tag
@@ -201,7 +201,7 @@ def get_tag(tag_id: int, db: Session = Depends(get_db)):
 
 @app.put("/tags/{tag_id}")
 def update_tag(tag_id: int, data: dict, db: Session = Depends(get_db)):
-    tag = db.query(Tag).get(tag_id)
+    tag = db.get(Tag, tag_id)
     if not tag:
         raise HTTPException(404, "Tag not found")
 
@@ -215,7 +215,7 @@ def update_tag(tag_id: int, data: dict, db: Session = Depends(get_db)):
 
 @app.delete("/tags/{tag_id}")
 def delete_tag(tag_id: int, db: Session = Depends(get_db)):
-    tag = db.query(Tag).get(tag_id)
+    tag = db.get(Tag, tag_id)
     if not tag:
         raise HTTPException(404, "Tag not found")
 
