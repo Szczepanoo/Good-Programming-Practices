@@ -107,6 +107,18 @@ def create_user(user: UserCreate, db: Session = Depends(get_db), current_user: U
     return {"id": new_user.id, "username": new_user.username}
 
 
+@app.get("/user_details")
+def user_details(current_user: User = Depends(get_current_user)):
+    """
+    Zwraca dane zalogowanego użytkownika pobrane z payloadu tokena.
+    """
+    return {
+        "id": current_user.id,
+        "username": current_user.username,
+        "roles": current_user.roles.split(",")
+    }
+
+
 @app.get("/")
 def root():
     return {"hello": "world"}
