@@ -58,7 +58,7 @@ def create_movie(movie: dict, db: Session = Depends(get_db)):
 
 @app.get("/movies/{movie_id}")
 def get_movie(movie_id: int, db: Session = Depends(get_db)):
-    movie = db.query(Movie).get(movie_id)
+    movie = db.get(Movie, movie_id)
     if not movie:
         raise HTTPException(404, "Movie not found")
     return movie
@@ -66,7 +66,7 @@ def get_movie(movie_id: int, db: Session = Depends(get_db)):
 
 @app.put("/movies/{movie_id}")
 def update_movie(movie_id: int, data: dict, db: Session = Depends(get_db)):
-    movie = db.query(Movie).get(movie_id)
+    movie = db.get(Movie, movie_id)
     if not movie:
         raise HTTPException(404, "Movie not found")
 
@@ -80,7 +80,7 @@ def update_movie(movie_id: int, data: dict, db: Session = Depends(get_db)):
 
 @app.delete("/movies/{movie_id}")
 def delete_movie(movie_id: int, db: Session = Depends(get_db)):
-    movie = db.query(Movie).get(movie_id)
+    movie = db.get(Movie, movie_id)
     if not movie:
         raise HTTPException(404, "Movie not found")
 
