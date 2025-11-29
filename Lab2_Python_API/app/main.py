@@ -30,45 +30,6 @@ class LoginData(BaseModel):
     password: str
 
 
-@app.post("/login")
-def login(data: LoginData, db: Session = Depends(get_db)):
-    user = db.query(User).filter(cast(User.username == data.username, Boolean)).first()
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    if not bcrypt.checkpw(data.password.encode('utf-8'), user.hashed_password.encode('utf-8')):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    payload = {
-        "sub": user.username,
-        "iat": datetime.utcnow(),
-        "exp": datetime.utcnow() + timedelta(hours=1)
-    }
-    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-    return {"access_token": token, "token_type": "bearer"}
-
-
-class UserCreate(BaseModel):
-    username: str
-    password: str
-
-
-@app.post("/users")
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    existing_user = db.query(User).filter(cast(User.username == user.username, Boolean)).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Username already exists")
-
-    hashed_pw = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-    new_user = User(username=user.username, hashed_password=hashed_pw)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    return {"id": new_user.id, "username": new_user.username}
-
-
 bearer_scheme = HTTPBearer()
 
 
@@ -92,6 +53,58 @@ def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
     return user
+
+
+def require_admin(current_user: User):
+    roles = current_user.roles.split(",")
+    if "ROLE_ADMIN" not in roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrator privileges required"
+        )
+
+
+@app.post("/login")
+def login(data: LoginData, db: Session = Depends(get_db)):
+    user = db.query(User).filter(cast(User.username == data.username, Boolean)).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    if not bcrypt.checkpw(data.password.encode('utf-8'), user.hashed_password.encode('utf-8')):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    payload = {
+        "sub": user.username,
+        "roles": user.roles,
+        "iat": datetime.utcnow(),
+        "exp": datetime.utcnow() + timedelta(hours=1)
+    }
+    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    return {"access_token": token, "token_type": "bearer"}
+
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
+
+@app.post("/users")
+def create_user(user: UserCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+
+    require_admin(current_user)
+
+    existing_user = db.query(User).filter(cast(User.username == user.username, Boolean)).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username already exists")
+
+    hashed_pw = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+    new_user = User(username=user.username, hashed_password=hashed_pw)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return {"id": new_user.id, "username": new_user.username}
 
 
 @app.get("/")
