@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from .database import SessionLocal, init_db
 from .models import Movie, Link, Rating, Tag, User
 import jwt
@@ -76,8 +76,8 @@ def login(data: LoginData, db: Session = Depends(get_db)):
     payload = {
         "sub": user.username,
         "roles": user.roles,
-        "iat": datetime.utcnow(),
-        "exp": datetime.utcnow() + timedelta(hours=1)
+        "iat": datetime.now(UTC),
+        "exp": datetime.now(UTC) + timedelta(hours=1)
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     return {"access_token": token, "token_type": "bearer"}
