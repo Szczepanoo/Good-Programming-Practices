@@ -1,0 +1,38 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "8080:15672"
+      - "5672:5672"
+
+  service-a:
+    build: .
+    command: uvicorn api_a:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8001:8000"
+
+  service-b:
+    build: .
+    command: uvicorn api_b:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - rabbitmq
+
+  worker:
+    build: .
+    command: python worker.py
+    depends_on:
+      - rabbitmq
+      - service-a
+    deploy:
+      replicas:
+        2
+
+  sender:
+    build: .
+    command: python result_sender.py
+    depends_on:
+      - rabbitmq
+      - service-a
+      - worker

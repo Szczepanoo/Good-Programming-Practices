@@ -1,0 +1,13 @@
+# --- API ---
+fastapi
+uvicorn
+
+# --- RabbitMQ ---
+pika
+
+# --- HTTP ---
+requests
+
+# --- AI / Image processing ---
+opencv-python-headless
+numpy
