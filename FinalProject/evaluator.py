@@ -23,4 +23,4 @@ def calculate_final_grade(accuracy_percent: float, processing_time_sec: float) -
     return round(grade * 2) / 2
 
 
-print(calculate_final_grade(100,20))
+print(calculate_final_grade(70,40))
