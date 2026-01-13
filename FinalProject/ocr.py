@@ -8,6 +8,8 @@ import torch
 import easyocr
 from ultralytics import YOLO
 import numpy as np
+from calculate_grade import calculate_final_grade
+
 
 # =========================
 # Konfiguracja
@@ -265,6 +267,7 @@ def read_plate_easyocr_with_fallback(image, bbox) -> str:
         primary_img,
         allowlist="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
         detail=0,
+        #decoder="beamsearch"
     )
 
     text = pick_best_ocr_result(result) if result else ""
@@ -369,6 +372,21 @@ def detect_best_plate_bbox(image):
     ]
 
 
+def analyze_image_bytes(image_bytes: bytes) -> dict:
+    image = cv2.imdecode(
+        np.frombuffer(image_bytes, np.uint8),
+        cv2.IMREAD_COLOR
+    )
+
+    bbox = detect_best_plate_bbox(image)
+    text = read_plate_easyocr_with_fallback(image, bbox) if bbox else ""
+
+    return {
+        "plate": normalize_plate_contextual(text),
+        "success": bool(text)
+    }
+
+
 # =========================
 # Main loop
 # =========================
@@ -417,6 +435,7 @@ def main():
 
     print(f"OCR Accuracy: {accuracy:.2f}%")
     print(f"Processing time for {total} images: {elapsed:.2f}s")
+    #print(f"Final grade: {calculate_final_grade(total, elapsed:.2f}")
 
 
 if __name__ == "__main__":
