@@ -21,6 +21,3 @@ def calculate_final_grade(accuracy_percent: float, processing_time_sec: float) -
     grade = 2.0 + 3.0 * score
     # Round to the nearest 0.5
     return round(grade * 2) / 2
-
-
-#print(calculate_final_grade(70,40))
